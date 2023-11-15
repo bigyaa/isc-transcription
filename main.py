@@ -1,14 +1,65 @@
+# *************************************************************************************************************************
+#   main.py 
+#       This is the entry point for the transcription application using the WhisperxTranscriber. It handles command-line 
+#       arguments, sets up logging, validates XML configuration, and initiates the transcription process.
+# -------------------------------------------------------------------------------------------------------------------
+#   Usage:
+#      python main.py --audio [path_to_audio_file] --configxml [path_to_config_file] [Other_Arguments]
+#
+#      Arguments:
+#         --audio - Specify the path to the input audio file to be transcribed.
+#         --configxml - Specify the path to the input XML configuration file.
+#         --model_type - Specify the Whisper model type for transcription.
+#         --audiodir - Specify the directory of audio files to transcribe.
+#         --transcriptiondir - Specify the directory where transcriptions should be stored.
+#         --hf_token - Hugging Face authentication token for using models with diarization.
+#         --extensions - List of audio file extensions to be considered in the specified audio directory.
+#
+#      Outputs:
+#         Initiates the transcription process and outputs transcription files in the specified directory.
+#         Generates logs of the application's activities and errors.
+#
+#   Design Notes:
+#   -.  The application is configured to be flexible with user inputs for audio sources and transcription settings.
+#   -.  It utilizes an XML configuration file for setting up transcription parameters and validates it against a schema.
+#   -.  Transcription is handled by creating an instance of WhisperxTranscriber and calling its transcribe method.
+# ---------------------------------------------------------------------------------------------------------------------
+#   TODO:
+#   -.  Improve error handling for command-line argument parsing and XML validation.
+#   -.  Extend the application to handle different input/output formats and sources.
+#   -.  Refactor the code for better modularity and testability.
+# ---------------------------------------------------------------------------------------------------------------------
+#   last updated:  November 2023
+#   authors:       Reuben Maharaj, Bigya Bajarcharya, Mofeoluwa Jide-Jegede
+# *************************************************************************************************************************
+
+# ***********************************************
+# imports
+# ***********************************************
+#
+# os - for file path operations
+# sys -
+# glob - for retrieving files matching a certain pattern
+# argparse - for command line argument parsing
+# lxml.etree - for XML parsing and validation
+# src.transcribe.models.Whisper - custom package for the transcription model
+# datetime - for generating timestamped log files
+# src.utils.ISCLogWrapper - custom wrapper for logging functionalities
+# src.utils.TranscriptionConfig - custom configuration handler for transcription settings
+
+
 import os
+import sys
+import glob
 import argparse
 from lxml import etree
-from src.transcribe.models.WhisperxTranscriber import WhisperxTranscriber
+from src.transcribe.models.Whisper import Whisperx
 from datetime import datetime
 from src.utils.ISCLogWrapper import ISCLogWrapper, logging
 from src.transcribe.TranscribeFactory import TranscribeFactory
 from src.utils.TranscriptionConfig import TranscriptionConfig
 
-default_audio = 'sample/Sample.mp3'
-
+default_audio='sample/Sample.mp3'
 
 def setup_logging():
     isc_log_wrapper = ISCLogWrapper(

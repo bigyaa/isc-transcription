@@ -1,29 +1,73 @@
+# *************************************************************************************************************************
+#   WhisperxTranscriber.py 
+#       This module contains the WhisperxTranscriber class, which utilizes the Whisper speech recognition library to 
+#       transcribe audio files. It supports batch processing, multiple compute types, and integrates diarization for 
+#       identifying different speakers within the audio.
+# -------------------------------------------------------------------------------------------------------------------
+#   Usage:
+#      from WhisperxTranscriber import WhisperxTranscriber
+#      transcriber = WhisperxTranscriber(model_size='base', hf_token='your_hf_token', audio_files='sample.mp3')
+#      transcriber.transcribe()
+#
+#      Parameters:
+#         model_size - The size of the Whisper model to use (e.g., 'tiny', 'base', 'small', 'medium', 'large')
+#         hf_token - Hugging Face authentication token for using models hosted on Hugging Face
+#         audio_files - The path to the audio file to transcribe
+#         batch_size - The number of audio segments to process simultaneously (default=16)
+#         compute_type - The type of computation (precision) to use, such as 'int8' or 'float16' (default='int8')
+#
+#      Outputs (on successful transcription):
+#         A text file for the input audio file, containing the transcribed text with timestamps and speaker identification.
+#
+#   Design Notes:
+#   -.  The WhisperxTranscriber is built to utilize CPU resources by default but can be adapted to use GPU.
+#   -.  It incorporates a diarization pipeline to differentiate between speakers in the audio.
+#   -.  Aligned segments with speaker labels are produced to enhance the readability of the transcript.
+# ---------------------------------------------------------------------------------------------------------------------
+#   TODO:
+#   -.  Add support for GPU-based diarization and transcription for performance improvements.
+#   -.  Error handling for unsupported audio formats and failed transcription attempts.
+#   -.  Option to output aligned segments with character-level alignments.
+# ---------------------------------------------------------------------------------------------------------------------
+#   last updated:  November 2023
+#   authors:       Reuben Maharaj, Bigya Bajarcharya, Mofeoluwa Jide-Jegede
+# *************************************************************************************************************************
+
 import os
 from typing import List
 import whisperx
-from whisperx import load_audio
-from whisperx import DiarizationPipeline
+from whisperx import load_audio, DiarizationPipeline, load_align_model, align, assign_word_speakers
 import logging
 import subprocess
 
-# Setup logger
+# Setup logger for informational output
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 class WhisperxTranscriber:
+    """
+    Transcribes audio using the Whisper speech recognition library with added diarization.
+    """
     def __init__(self, model_size: str, hf_token: str, audio_files: str, batch_size: int = 16, compute_type: str = "int8"):
+        """
+        Initializes the transcriber with the given model size, Hugging Face token, audio file path, and optional batch size and compute type.
+        """
         self.model_size = model_size
         self.hf_token = hf_token
         self.audio_files = audio_files
         self.batch_size = batch_size
         self.compute_type = compute_type
-        self.model = whisperx.load_model("base", device="cpu", compute_type=self.compute_type)
+        self.model = whisperx.load_model(model_size, device="cpu", compute_type=self.compute_type)
 
     def transcribe(self):
+        """
+        Performs transcription of the specified audio file, including diarization to identify and label different speakers.
+        Outputs a .txt file with time-stamped transcriptions.
+        """
         logger.info(f"Loading {self.model_size} model")
         diarize_model = DiarizationPipeline(use_auth_token=self.hf_token, device="cpu")
 
-         #todo: integrate traversal branch
+        #todo: integrate traversal branch
         audio=self.audio_files
         logger.info(f"Transcribing audio file: {audio}")
         waveform = load_audio(audio)

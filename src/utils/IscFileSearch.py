@@ -1,14 +1,45 @@
+# *************************************************************************************************************************
+#   IscFileSearch.py 
+#       This module contains the IscFileSearch class that provides functionality to search, retrieve, and manipulate
+#       files within a specified directory. It is designed to perform common file operations such as traversing directories, 
+#       renaming files, deleting files, and getting file properties.
+# -------------------------------------------------------------------------------------------------------------------
+#   Usage:
+#       The IscFileSearch class can be imported and instantiated with a directory path. It provides methods to:
+#       - Traverse directories and find files with specific extensions.
+#       - Retrieve files with certain extensions within the given directory.
+#       - Delete files and handle deletions with proper error checking.
+#       - Rename files with an option to overwrite existing files.
+#       - Get file properties such as size and modification time.
+#
+#       from src.utils.IscFileSearch import IscFileSearch
+#       file_search = IscFileSearch('path/to/directory')
+#       files = file_search.get_files(['mp3', 'wav'])
+#       file_search.delete_file('path/to/file.mp3')
+#       file_search.rename_file('old_name.mp3', 'new_name.mp3', overwrite=True)
+#       properties = file_search.get_file_properties('path/to/file.mp3')
+#
+#   Design Notes:
+#   -.  The class utilizes the os module to interact with the filesystem.
+#   -.  Includes comprehensive error handling to ensure robust file operations.
+#   -.  Provides logging for each operation to track the behavior and potential issues.
+#   -.  Designed to be a utility within a larger system, such as a transcription application.
+# ---------------------------------------------------------------------------------------------------------------------
+#   TODO:
+#   -.  Extend functionality to support more file operations as needed.
+#   -.  Implement additional file property retrieval, such as file permissions.
+#   -.  Optimize file traversal with more efficient search patterns or parallel processing.
+# ---------------------------------------------------------------------------------------------------------------------
+#   last updated:  November 2023
+#   authors:       Reuben Maharaj, Bigya Bajarcharya, Mofeoluwa Jide-Jegede
+# *************************************************************************************************************************
+
 import os
 import logging
 
-#get the logger
+# Logger setup if not already configured in the main application...
 logger = logging.getLogger()
 
-
-"""
-This file references the os module, which provides a way to interact with the operating system, including
-file and directory manipulation.
-"""
 
 class IscFileSearch:
     def __init__(self, path):

@@ -1,11 +1,58 @@
+# *************************************************************************************************************************
+#   TranscriptionConfig.py 
+#       This module contains the TranscriptionConfig class that provides functionality to read, edit, create, and delete
+#       settings within an XML configuration file for a transcription system. It is designed to be flexible and 
+#       user-friendly, providing a simple interface for managing transcription settings.
+# -------------------------------------------------------------------------------------------------------------------
+#   Usage:
+#       The TranscriptionConfig class can be imported and instantiated with a path to an XML configuration file.
+#       It provides methods to get, set, and delete configuration settings, as well as to save any changes made.
+#
+#       from src.utils.TranscriptionConfig import TranscriptionConfig
+#       config = TranscriptionConfig('path/to/config.xml')
+#       model_type = config.get('settings/model')
+#       config.set('settings/model', 'new_model_type')
+#       config.delete_key('settings/obsolete_setting')
+#       config.save_changes()
+#
+#   Design Notes:
+#   -.  The class utilizes the xml.etree.ElementTree library for XML parsing.
+#   -.  It includes error handling to ensure robustness when dealing with file operations.
+#   -.  Provides a logging mechanism to track operations and errors.
+#   -.  Intended to be used as a configuration management utility for a larger transcription application.
+# ---------------------------------------------------------------------------------------------------------------------
+#   TODO:
+#   -.  Implement additional validation for XML structure and values.
+#   -.  Extend the class to handle different types of configuration storage, such as JSON or databases.
+#   -.  Enhance the interface to support batch operations for settings.
+# ---------------------------------------------------------------------------------------------------------------------
+#   last updated:  November 2023
+#   authors:       Reuben Maharaj, Bigya Bajarcharya, Mofeoluwa Jide-Jegede
+# *************************************************************************************************************************
+
+# ***********************************************
+# imports
+# ***********************************************
+#
+# xml.etree.ElementTree - to parse, traverse, and manipulate the structure of XML files
+# logging - to log information, warnings, and errors
+# os - to interact with the operating system, particularly for file handling
+#
+
 import xml.etree.ElementTree as ET
 import logging
 import os
 
-
+# Logger setup if not already configured in the main application...
 logger = logging.getLogger()
 
-
+# ***********************************************
+# TranscriptionConfig class definition
+# ***********************************************
+#
+# The TranscriptionConfig class is defined here with its constructor and methods for managing
+# XML configuration files for a transcription system.
+#
 class TranscriptionConfig:
     """
     A class for reading, editing, deleting, and creating XML configuration files 
