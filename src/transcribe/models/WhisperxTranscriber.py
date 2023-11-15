@@ -60,6 +60,18 @@ class WhisperxTranscriber:
         self.model = whisperx.load_model(model_size, device="cpu", compute_type=self.compute_type)
 
     def transcribe(self):
+        for audio in self.audio_files:
+            waveform = load_audio(audio)
+            result = self.model.transcribe(waveform, batch_size=self.batch_size)
+            base_name = os.path.splitext(os.path.basename(audio))[0]
+            output_file_path = f"{base_name}.txt"
+            
+            with open(output_file_path, "w+") as output_file:
+                for segment in result["segments"]:
+                    output_file.write(f"{segment['start']} {segment['end']} {segment['text']}\n")
+    
+    
+    def transcribe(self):
         """
         Performs transcription of the specified audio file, including diarization to identify and label different speakers.
         Outputs a .txt file with time-stamped transcriptions.

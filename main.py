@@ -53,7 +53,7 @@ import sys
 import glob
 import argparse
 from lxml import etree
-from src.transcribe.models.Whisper import Whisperx
+from src.transcribe.models.WhisperxTranscriber import WhisperxTranscriber
 from datetime import datetime
 from src.utils.ISCLogWrapper import ISCLogWrapper, logging
 from src.transcribe.TranscribeFactory import TranscribeFactory
