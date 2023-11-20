@@ -32,6 +32,30 @@
 #   last updated:  November 2023
 #   authors:       Reuben Maharaj, Bigya Bajarcharya, Mofeoluwa Jide-Jegede
 # *************************************************************************************************************************
+# ***********************************************
+# imports
+# ***********************************************
+
+# os - operating system interface
+#    path.basename - get the base name of pathname
+#    path.splitext - split the pathname into a pair (root, ext)
+
+# typing - support for type hints
+#    List - list type hint support
+
+# whisperx - speech recognition library with diarization support
+#    load_audio - function to load audio files into memory
+#    DiarizationPipeline - class for performing speaker diarization
+#    load_align_model - function to load alignment model
+#    align - function to align transcriptions with audio
+#    assign_word_speakers - function to assign speakers to words
+
+# logging - logging library
+#    basicConfig - function to configure the logging
+#    getLogger - function to get a logging instance
+
+# subprocess - subprocess management
+#    call - run a command in a subprocess
 
 import os
 from typing import List

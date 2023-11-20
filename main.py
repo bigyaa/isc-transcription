@@ -5,24 +5,17 @@
 # -------------------------------------------------------------------------------------------------------------------
 #   Usage:
 #      python main.py --audio [path_to_audio_file] --configxml [path_to_config_file] [Other_Arguments]
-#
-#      Arguments:
-#         --audio - Specify the path to the input audio file to be transcribed.
-#         --configxml - Specify the path to the input XML configuration file.
-#         --model_type - Specify the Whisper model type for transcription.
-#         --audiodir - Specify the directory of audio files to transcribe.
-#         --transcriptiondir - Specify the directory where transcriptions should be stored.
-#         --hf_token - Hugging Face authentication token for using models with diarization.
-#         --extensions - List of audio file extensions to be considered in the specified audio directory.
-#
+#      Arguments and defaults:
+#         -a, --audio [path] : Specify the path to the input audio file to be transcribed.
+#         -cx, --configxml [path] : Specify the path to the XML configuration file. Default 'config/default_config.xml'
+#         -mt, --model_type [type] : Specify the Whisper model type for transcription. Default 'base'
+#         -ad, --audiodir [dir] : Specify the directory of audio files to transcribe. Default 'audio_files'
+#         -td, --transcriptiondir [dir] : Specify the directory to store transcriptions. Default 'transcriptions'
+#         -ht, --hf_token [token] : Hugging Face authentication token for using models with diarization.
+#         -e, --extensions [ext] : List of audio file extensions in audiodir. Default ['.mp3', '.wav', '.aac']
 #      Outputs:
 #         Initiates the transcription process and outputs transcription files in the specified directory.
 #         Generates logs of the application's activities and errors.
-#
-#   Design Notes:
-#   -.  The application is configured to be flexible with user inputs for audio sources and transcription settings.
-#   -.  It utilizes an XML configuration file for setting up transcription parameters and validates it against a schema.
-#   -.  Transcription is handled by creating an instance of WhisperxTranscriber and calling its transcribe method.
 # ---------------------------------------------------------------------------------------------------------------------
 #   TODO:
 #   -.  Improve error handling for command-line argument parsing and XML validation.
@@ -32,145 +25,123 @@
 #   last updated:  November 2023
 #   authors:       Reuben Maharaj, Bigya Bajarcharya, Mofeoluwa Jide-Jegede
 # *************************************************************************************************************************
-
 # ***********************************************
 # imports
 # ***********************************************
-#
-# os - for file path operations
-# sys -
-# glob - for retrieving files matching a certain pattern
-# argparse - for command line argument parsing
-# lxml.etree - for XML parsing and validation
-# src.transcribe.models.Whisper - custom package for the transcription model
-# datetime - for generating timestamped log files
-# src.utils.ISCLogWrapper - custom wrapper for logging functionalities
-# src.utils.TranscriptionConfig - custom configuration handler for transcription settings
 
+# os - for file path operations
+#   getcwd - get the current working directory
+#   path.exists - check if a path exists
+#   path.join - join one or more path components intelligently
+
+# argparse - for command line argument parsing
+#   ArgumentParser - create a parser object to hold argument information
+#   add_argument - define how a single command-line argument should be parsed
+
+# lxml.etree - for XML parsing and validation
+#   parse - parse an XML document into an element tree
+#   XMLSchema - validate an XML document against XML Schema
+
+# datetime - for generating timestamped log files
+#   datetime.now - get the current date and time
+#   strftime - format a date or time according to the specified format
+
+# Custom packages for the transcription model and utilities
+# src.transcribe.models.WhisperxTranscriber - custom package for the transcription model
+#   WhisperxTranscriber - class to handle transcription process using Whisper models
+
+# src.utils.ISCLogWrapper - custom wrapper for logging functionalities
+#   ISCLogWrapper - class to configure and initiate logging
+#   logging.getLogger - method to return a logger instance with the specified name
+
+# src.utils.TranscriptionConfig - custom configuration handler for transcription settings
+#   TranscriptionConfig - class to manage transcription configuration from an XML file
 
 import os
-import sys
-import glob
 import argparse
 from lxml import etree
-from src.transcribe.models.WhisperxTranscriber import WhisperxTranscriber
 from datetime import datetime
+from src.transcribe.models.WhisperxTranscriber import WhisperxTranscriber
 from src.utils.ISCLogWrapper import ISCLogWrapper, logging
-from src.transcribe.TranscribeFactory import TranscribeFactory
 from src.utils.TranscriptionConfig import TranscriptionConfig
+import ssl
+import certifi
 
-default_audio='sample/Sample.mp3'
+ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
+
+
+# Default values
+DEFAULT_XML_CONFIG = 'config/default_config.xml'
+DEFAULT_SCHEMA_FILE = 'config/config_schema.xsd'
+DEFAULT_TRANSCRIPTION_DIR = 'transcriptions'
+DEFAULT_LOG_FILE = 'logs/ISC_DefaultLog.log'
+DEFAULT_FILE_EXTENSIONS = ['.mp3', '.wav', '.aac']
+DEFAULT_AUDIO = 'sample/Sample.mp3'  # Default audio file if no other source is specified
+ALLOWED_MODEL_TYPES = ['tiny', 'base', 'small', 'medium', 'large']
+DEFAULT_MODEL_TYPE = 'base'
+DEFAULT_LOGGING_CONFIG = {
+    'console_log_output': "stdout",
+    'console_log_level': "info",
+    'console_log_color': True,
+    'logfile_file': datetime.now().strftime('ISC_%H_%M_%d_%m_%Y.log'),
+    'logfile_log_level': "debug",
+    'logfile_log_color': False,
+    'logfile_path': "logs"
+}
 
 def setup_logging():
-    isc_log_wrapper = ISCLogWrapper(
-        console_log_output="stdout",
-        console_log_level="info",
-        console_log_color=True,
-        logfile_file=datetime.now().strftime('ISC_%H_%M_%d_%m_%Y.log'),
-        logfile_log_level="debug",
-        logfile_log_color=False,
-        logfile_path="logs"
-    )
+    isc_log_wrapper = ISCLogWrapper(**DEFAULT_LOGGING_CONFIG)
     if not isc_log_wrapper.set_up_logging():
         print("Failed to set up logging, aborting.")
-        return 1
+        sys.exit(1)
     return logging.getLogger(__name__)
-
 
 logger = setup_logging()
 
-
 def parse_command_line_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--audio", help="Specify the input audio file")
-    parser.add_argument(
-        "--configxml", help="Specify the input xml config file")
-
-    # new arguments
-    parser.add_argument(
-        "--model_type", help="Specify the model type for transcription")
-    parser.add_argument(
-        "--audiodir", help="Specify the directory of audio to transcribe")
-    parser.add_argument("--transcriptiondir",
-                        help="Specify the directory to store transcriptions")
-    parser.add_argument(
-        "--hf_token", help="Specify the user token needed for diarization")
-    parser.add_argument(
-        "--extensions", help="List of audio extensions in audiodir")
-
+    parser = argparse.ArgumentParser(description="Process command-line arguments for audio transcription.")
+    parser.add_argument("-a", "--audio", help="Specify the input audio file")
+    parser.add_argument("-cx", "--configxml", help="Specify the input xml config file", default=DEFAULT_XML_CONFIG)
+    parser.add_argument("-mt", "--model_type", help="Specify the model type for transcription", default='base')
+    parser.add_argument("-ad", "--audiodir", help="Specify the directory of audio to transcribe", default=DEFAULT_TRANSCRIPTION_DIR)
+    parser.add_argument("-td", "--transcriptiondir", help="Specify the directory to store transcriptions", default=DEFAULT_TRANSCRIPTION_DIR)
+    parser.add_argument("-ht", "--hf_token", help="Specify the user token needed for diarization")
+    parser.add_argument("-e", "--extensions", nargs='+', help="List of audio extensions in audiodir", default=DEFAULT_FILE_EXTENSIONS)
     return parser.parse_args()
 
-
-def get_audio_source(config, cmd_audio, cmd_config, logger):
-    if cmd_audio:
-        logger.info('Starting transcription with cmd_audio audio directory')
-        return cmd_audio
-
-    if cmd_config and cmd_config.endswith('.xml'):
-        try:
-            extract_config = TranscriptionConfig(cmd_config)
-            if 'audiodir' in extract_config:
-                logger.info(
-                    'Starting transcription with cmd_config audio directory')
-                return extract_config.get('audiodir')
-            else:
-                logger.error(
-                    "The configuration file does not contain 'audiodir'.")
-        except Exception as e:
-            logger.error("Error while reading the configuration file:", e)
-    else:
-        logger.error(
-            "Wrong file name or extension for the configuration file.")
-
-    default_audio = config.get('audiodir')
-    if default_audio:
-        logger.info('Starting transcription with default audio directory')
-        return default_audio
-
-    logger.error(
-        "No valid audio directory specified. Transcription cannot proceed.")
-    return default_audio
-
-
-def validate_configxml(xml_file, xsd_file):
-    # Load the XML file
-    # xml_file = "config.xml"
-    # xsd_file = "config_schema.xsd"  # Path to your XSD file
-
-    # Parse the XML file
-    xml_doc = etree.parse(xml_file)
-
-    # Load the XML schema
-    schema = etree.XMLSchema(file=xsd_file)
-
-    logger.info('Validating to check if the xml meets schema requirements')
-
-    # Validate the XML document against the schema
+def validate_configxml(xml_file, xsd_file, logger):
     try:
+        xml_doc = etree.parse(xml_file)
+        schema = etree.XMLSchema(file=xsd_file)
         schema.assertValid(xml_doc)
         logger.info("XML document is valid according to the schema.")
+    except etree.XMLSchemaParseError as xspe:
+        logger.error("XML Schema is not valid: {}".format(xspe))
+    except etree.DocumentInvalid as di:
+        logger.error("XML document is not valid: {}".format(di))
     except Exception as e:
-        logger.error("XML document is not valid according to the schema.", e)
-
+        logger.error("An error occurred during XML validation: {}".format(e))
 
 def main():
-    path1 = os.getcwd()
-    path = os.path.join(path1, "config/dev_config.xml")
-    config = TranscriptionConfig(path)
-
-    validate_configxml("config/dev_config.xml", "./config_validator.xsd")
     args = parse_command_line_args()
-    audio = get_audio_source(config, args.audio, args.configxml, logger)
+    logger = setup_logging()
+    validate_configxml(args.configxml, DEFAULT_SCHEMA_FILE, logger)
+    
+    config = TranscriptionConfig(args.configxml)
+    audio_source = args.audio if args.audio is not None else config.get('audiodir')
+    if not audio_source:
+        logger.error("No valid audio directory specified. Transcription cannot proceed.")
+        return
 
+    model_type = args.model_type if args.model_type in ALLOWED_MODEL_TYPES else DEFAULT_MODEL_TYPE
     hf_token = config.get('settings/hf_token')
-    if audio:
+    model = WhisperxTranscriber(model_type, hf_token, audio_source)
+    
+    if os.path.exists(audio_source):
         logger.info("Starting Transcription.")
-        logger.info("CWD: " + os.getcwd())
-        model = WhisperxTranscriber("small", hf_token, audio)
         model.transcribe()
     else:
-        logger.error("Cannot access audio file")
-
+        logger.error("Cannot access audio file: {}".format(audio_source))
 
 if __name__ == '__main__':
     main()

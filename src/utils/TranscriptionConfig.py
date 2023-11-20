@@ -29,21 +29,29 @@
 #   last updated:  November 2023
 #   authors:       Reuben Maharaj, Bigya Bajarcharya, Mofeoluwa Jide-Jegede
 # *************************************************************************************************************************
-
 # ***********************************************
 # imports
 # ***********************************************
-#
-# xml.etree.ElementTree - to parse, traverse, and manipulate the structure of XML files
-# logging - to log information, warnings, and errors
-# os - to interact with the operating system, particularly for file handling
-#
+
+# xml.etree.ElementTree - XML manipulation API
+#   ElementTree - represents the whole XML document as a tree
+#   parse - parses an XML document into an ElementTree
+#   Element - a single node in the XML tree
+
+# logging - logging library
+#   getLogger - function to get a logging instance
+#   error - log an error message
+#   info - log an informational message
+#   critical - log a critical message
+
+# os - operating system interface
+#   path.exists - check if a path exists
+#   remove - remove (delete) the file path
 
 import xml.etree.ElementTree as ET
 import logging
 import os
 
-# Logger setup if not already configured in the main application...
 logger = logging.getLogger()
 
 # ***********************************************

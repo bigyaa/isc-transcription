@@ -1,65 +1,75 @@
 # *************************************************************************************************************************
 #   ISCLogWrapper.py 
-#       This module provides a class, ISCLogWrapper, which wraps the Python logging module to set up customized logging
-#       with options for console and file output, different log levels, and optional colorization of output for 
-#       differentiation of log levels.
-# -------------------------------------------------------------------------------------------------------------------
-#   Usage:
-#      log_wrapper = ISCLogWrapper(
-#         console_log_output="stdout",
-#         console_log_level="info",
-#         console_log_color=True,
-#         logfile_file="application.log",
-#         logfile_path="logs/",
-#         logfile_log_level="debug",
-#         logfile_log_color=False
-#      )
-#      log_wrapper.set_up_logging()
+#       This module provides the ISCLogWrapper class which simplifies the configuration of the Python logging module. 
+#       It allows setting up logging to console and log files with options for specifying log levels and colorization 
+#       for easy differentiation of log messages.
 #
-#      Parameters:
-#         console_log_output - Designate the console output stream ('stdout' or 'stderr').
-#         console_log_level - Specify the logging level for console output.
-#         console_log_color - Toggle colorization for console output.
-#         logfile_file - Name of the file to write logs to.
-#         logfile_path - Directory path for the log file.
-#         logfile_log_level - Specify the logging level for file output.
-#         logfile_log_color - Toggle colorization for file output.
+#   Class ISCLogWrapper:
+#       The class constructor (__init__) takes parameters to configure the logging behavior:
+#         - console_log_output: Designates the console output stream ('stdout' or 'stderr').
+#         - console_log_level: Specifies the logging level for console output.
+#         - console_log_color: A boolean to toggle colorization for console output.
+#         - logfile_file: The filename for the log file.
+#         - logfile_path: The directory path where the log file will be saved.
+#         - logfile_log_level: Specifies the logging level for the log file output.
+#         - logfile_log_color: A boolean to toggle colorization for log file output.
+#
+#   Usage Example:
+#       log_wrapper = ISCLogWrapper(
+#           console_log_output="stdout",
+#           console_log_level="info",
+#           console_log_color=True,
+#           logfile_file="application.log",
+#           logfile_path="logs/",
+#           logfile_log_level="debug",
+#           logfile_log_color=False
+#       )
+#       log_wrapper.set_up_logging()
 #
 #   Design Notes:
-#   -.  Log levels and color codes are customizable.
-#   -.  Log format includes timestamps, thread names, log levels, file names, line numbers, and messages.
-#   -.  The log line format and date format can be easily adjusted by modifying the constants.
-#   -.  The logging setup configures both console and file handlers with respective formatters.
-#   -.  Fails gracefully by returning False if the setup encounters issues.
-# ---------------------------------------------------------------------------------------------------------------------
+#   -.  The log line format and date format are customizable by adjusting the constants LOG_LINE_TEMPLATE and LOG_LINE_DATEFMT.
+#   -.  The logging setup configures both console and file handlers with respective formatters and supports color coding in output.
+#   -.  If issues arise during setup, the class fails gracefully by returning False from the set_up_logging method.
+#
 #   TODO:
 #   -.  Implement configuration file support for easier logging configuration management.
 #   -.  Add support for rotating file handlers to manage log file sizes.
 #   -.  Consider adding network logging capabilities for centralized log management.
 # ---------------------------------------------------------------------------------------------------------------------
-#   last updated:  November 2023
-#   authors:       Reuben Maharaj, Bigya Bajarcharya, Mofeoluwa Jide-Jegede
+#   last updated: November 2023
+#   authors: Reuben Maharaj, Bigya Bajarcharya, Mofeoluwa Jide-Jegede
 # *************************************************************************************************************************
-
 # ***********************************************
 # imports
 # ***********************************************
-#
-# os - for file and directory operations
-# sys - to access the stdout and stderr streams
-# logging - to use the logging functionalities provided by Python
-# glob - to list the files in a directory (if needed for log management)
-#
+
+# os - operating system interface
+#   path.exists - check if a path exists
+#   path.join - join one or more path components intelligently
+#   makedirs - create a directory at the specified path
+
+# sys - access to some variables used or maintained by the interpreter
+#   stdout - standard output stream
+#   stderr - standard error stream
+
+# logging - logging library
+#   getLogger - function to get a logging instance
+#   StreamHandler - logging handler for logging to a stream (like stdout or stderr)
+#   FileHandler - logging handler for logging to a file
+#   Formatter - class for formatting the log messages
+#   DEBUG, INFO, WARNING, ERROR, CRITICAL - constants representing the standard logging levels
+
+# glob - pathname pattern expansion
+#   glob - function to return all pathnames matching a specified pattern
+
 import os
 import sys
 import logging
 import glob
 
-
 # Define constants used for the log line format and date format
 LOG_LINE_TEMPLATE="%(color_on)s[%(asctime)s.%(msecs)03d] [%(threadName)s] [%(levelname)-8s] [%(filename)s:%(lineno)d] %(message)s%(color_off)s"
 LOG_LINE_DATEFMT="%Y-%m-%d %H:%M:%S"
-
 
 # ***********************************************
 # LogFormatter class definition

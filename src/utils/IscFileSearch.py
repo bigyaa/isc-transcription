@@ -33,13 +33,33 @@
 #   last updated:  November 2023
 #   authors:       Reuben Maharaj, Bigya Bajarcharya, Mofeoluwa Jide-Jegede
 # *************************************************************************************************************************
+# ***********************************************
+# imports
+# ***********************************************
+
+# os - operating system interface
+#   path.join - join one or more path components intelligently
+#   path.exists - check if a path exists
+#   path.isdir - check if a path is a directory
+#   path.isfile - check if a path is a regular file
+#   path.basename - get the base name of a path
+#   listdir - list the names of the entries in the directory given by path
+#   walk - generate the file names in a directory tree by walking the tree either top-down or bottom-up
+#   remove - remove a file (delete)
+#   rename - rename the file or directory
+#   stat - get the status of a file or a file descriptor
+
+# logging - logging library
+#   getLogger - function to get a logging instance
+#   basicConfig - function to configure the logging
+#   error - log an error message
+#   info - log an informational message
+#   warning - log a warning message
 
 import os
 import logging
 
-# Logger setup if not already configured in the main application...
 logger = logging.getLogger()
-
 
 class IscFileSearch:
     def __init__(self, path):
