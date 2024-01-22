@@ -1,0 +1,3 @@
+Time taken to transcribe/diarize: 0.17754656473795574 minutes 
+
+[1.112 - 5.866] SPEAKER_00 :   This is the default recording for transcription.
