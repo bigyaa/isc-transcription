@@ -11,7 +11,7 @@
 #   -.  Default settings include file extensions for audio files, model types for transcription, and logging configurations.
 #   -.  The datetime module is used to timestamp log files.
 # ---------------------------------------------------------------------------------------------------------------------
-#   last updated: November 2023
+#   last updated: January 2024
 #   authors: Bigya Bajarcharya, Mofeoluwa Jide-Jegede, Phil Pfeiffer
 # *************************************************************************************************************************
 

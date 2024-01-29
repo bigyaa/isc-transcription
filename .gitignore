@@ -134,3 +134,6 @@ dmypy.json
 *.swo
 
 .DS_Store
+
+#scripts
+remove_dependencies.py

@@ -20,7 +20,7 @@
 #   -.  Custom utility functions are used for command-line parsing and XML validation.
 #   -.  The logging module is used to provide feedback and error reporting.
 # ---------------------------------------------------------------------------------------------------------------------
-#   last updated: November 2023
+#   last updated: January 2024
 #   authors: Ruben Maharjan, Bigya Bajarcharya, Mofeoluwa Jide-Jegede, Phil Pfeiffer
 # *************************************************************************************************************************
 
@@ -44,9 +44,10 @@ import copy
 
 from config.DEFAULTS import (DEFAULT_CONFIG_FILE, DEFAULT_CONFIG_FILE_SCHEMA,
                              DEFAULT_WHISPER_CONFIG)
-from src.utils.helperFunctions import (err_to_str, logger,
+from src.utils.helperFunctions import (format_error_message, logger,
                                        parse_command_line_args,
                                        validate_configxml)
+from src.utils.applicationStatusManagement import ExitStatus, FileFormatError, ConfigurationError
 
 # ***********************************************
 #  main module
@@ -60,34 +61,40 @@ from src.utils.helperFunctions import (err_to_str, logger,
 
 class TranscriptionConfig():
     def __init__(self):
-        self.command_line_args = copy.deepcopy(parse_command_line_args())
+        self.command_line_args = parse_command_line_args()
         self.config_data = copy.deepcopy(DEFAULT_WHISPER_CONFIG)
 
-        try:
-            config_file, fail_if_missing = copy.deepcopy(self.command_line_args.configxml), True
-        except AttributeError:
-            config_file, fail_if_missing = copy.deepcopy(DEFAULT_CONFIG_FILE), False
+        # Initialize error tracking variables
+        self._contents = {}
+        self.file_missing = []
+        self.file_malformed = []
+        self.schema_missing = []
+        self.schema_malformed = []
+        self.file_invalid = []
 
-        self.root = None
-        if os.path.isfile(config_file):
-            try:
-                self.root = ET.parse(config_file).getroot()
-            except Exception as e:
-                logger.error(f"Error loading config file: {config_file} - {err_to_str(e)}")
-        
-        if not self.root:
-            err_msg = f"Config file not found: {config_file}"
-            if fail_if_missing:
-                logger.error(err_msg)
+        try:
+            config_file = getattr(self.command_line_args, 'configxml', DEFAULT_CONFIG_FILE)
+            fail_if_missing = True if hasattr(self.command_line_args, 'configxml') else False
+
+            if os.path.isfile(config_file):
+                with open(config_file, 'rb') as file:
+                    self.root = ET.parse(file).getroot()
             else:
-                logger.warning(err_msg)
-        else:
-            validate_configxml(logger, config_file, DEFAULT_CONFIG_FILE_SCHEMA)
-            try:
-                for child in self.root:
-                    self.config_data[child.tag] = child.text
-            except Exception as e:
-                logger.error(f"Error loading config file: {config_file} - {err_to_str(e)}")
+                err_msg = f"Config file not found: {config_file}"
+                logger.error(err_msg)
+                if fail_if_missing:
+                    raise ConfigurationError(ExitStatus.missing_file())
+
+            if hasattr(self, 'root'):
+                try:
+                    validate_configxml(logger, config_file, DEFAULT_CONFIG_FILE_SCHEMA)
+                    self.config_data.update({child.tag: child.text for child in self.root})
+                except Exception as e:
+                    logger.error(f"Error loading config file: {config_file} - {format_error_message(e)}")
+                    raise ConfigurationError(ExitStatus.file_format_error())
+        except ConfigurationError as e:
+            logger.error(str(e))
+            raise ConfigurationError(ExitStatus.internal_error())
 
         for key, value in self.command_line_args.items():
             if value is not None:
@@ -102,9 +109,8 @@ class TranscriptionConfig():
         try:
             return self.config_data.get(key)
         except Exception as e:
-            logger.error(
-                f'Could not find element in configuration file: {err_to_str(e)}')
-            return None
+            logger.error(f'Could not find element in configuration file: {format_error_message(e)}')
+            raise ConfigurationError(ExitStatus.internal_error())
 
     def set_param(self, key, value):
         """
@@ -116,12 +122,9 @@ class TranscriptionConfig():
         """
         try:
             parts = key.split("/")
-            if len(parts) == 1:
-                parent = self.root
-            elif len(parts) > 1:
-                parent = self.root.find('/'.join(parts[:-1]))
-
+            parent = self.root if len(parts) == 1 else self.root.find('/'.join(parts[:-1]))
             element = parent.find(parts[-1]) if parent is not None else None
+
             if element is None:
                 element = ET.Element(parts[-1])
                 parent.append(element)
@@ -130,19 +133,15 @@ class TranscriptionConfig():
             logger.info(f'Set value of key "{key}" to: {value}')
             return True
         except Exception as e:
-            logger.error(f'Error while setting element value: {err_to_str(e)}')
-            return False
+            logger.error(f'Error while setting element value: {format_error_message(e)}')
+            raise ConfigurationError(ExitStatus.internal_error())
 
     def get_all(self):
         """
         Get all key-value pairs in the configuration file.
         """
-        result = {}
         try:
-            for child in self.root:
-                result[child.tag] = child.text
-            return result
+            return {child.tag: child.text for child in self.root}
         except Exception as e:
-            logger.error(
-                f'Error while getting all key-value pairs in configuration file: {err_to_str(e)}')
-            return False
+            logger.error(f'Error while getting all key-value pairs in configuration file: {format_error_message(e)}')
+            raise ConfigurationError(ExitStatus.internal_error())

@@ -20,7 +20,7 @@
 #   -.  Error handling is built into the methods to log issues when file operations fail.
 #   -.  The os module is used for file system interactions, and logging is used for error and info messages.
 # ---------------------------------------------------------------------------------------------------------------------
-#   last updated: November 2023
+#   last updated: January 2024
 #   authors: Ruben Maharjan, Bigya Bajarcharya, Mofeoluwa Jide-Jegede
 # *************************************************************************************************************************
 # ***********************************************
@@ -45,36 +45,64 @@ import os
 logger = logging.getLogger()
 
 class IscFileSearch:
+    """
+    The IscFileSearch class provides methods to interact with the file system, with a focus on audio files.
+
+    Attributes:
+        path (str): The directory path where file operations will be performed.
+
+    Methods:
+        traverse_directory(): Recursively traverses a directory and returns a list of audio file paths.
+        get_files(file_exts=None): Returns a list of audio file paths filtered by specified extensions.
+        delete_file(file_path): Deletes a file at the specified path.
+        rename_file(old_name, new_name, overwrite=False): Renames a file and returns a status code.
+        get_file_properties(file_path): Returns a dictionary of properties for the file at the specified path.
+    """
+
     def __init__(self, path):
+        """
+        Initialize the IscFileSearch with a directory path.
+
+        Args:
+            path (str): The directory path.
+        """
         self.path = path
     
     def traverse_directory(self):
         """
-        Recursively traverses a directory and returns a list of file paths for all
-        files that end with .mp3 or .wav.
+        Recursively traverses a directory and returns a list of audio file paths for files ending with .mp3 or .wav.
         """
         if not os.path.exists(self.path):
             logger.error("Directory does not exist: %s", self.path)
             return []
 
-        file_paths = []
+        audio_file_paths = []
         for dirpath, dirnames, filenames in os.walk(self.path, onerror=lambda e: logger.error(e)):
             for filename in filenames:
                 if filename.lower().endswith(('.mp3', '.wav')):
-                    file_paths.append(os.path.join(dirpath, filename))
-        return file_paths
+                    audio_file_paths.append(os.path.join(dirpath, filename))
+        return audio_file_paths
 
     def get_files(self, file_exts=None):
         """
-        Returns a list of file paths in the directory whose extensions are in the specified file_exts parameter.
+        Returns a list of audio file paths in the directory filtered by specified file extensions.
+
+        Args:
+            file_exts (list): A list of file extensions to filter files by during searches.
+
+        Returns:
+            list: List of audio file paths.
         """
         if file_exts is None:
             file_exts = ['mp3', 'wav']
-        return self.traverse_directory()  # Reusing traverse_directory to filter by extensions
+        return self.traverse_directory()
 
     def delete_file(self, file_path):
         """
         Deletes a file at the specified path.
+
+        Args:
+            file_path (str): The path of the file to be deleted.
         """
         try:
             os.remove(file_path)
@@ -87,6 +115,14 @@ class IscFileSearch:
     def rename_file(self, old_name, new_name, overwrite=False):
         """
         Renames a file from old_name to new_name and returns a status code.
+
+        Args:
+            old_name (str): The old name of the file.
+            new_name (str): The new name of the file.
+            overwrite (bool): Whether to overwrite an existing file with the new name.
+
+        Returns:
+            int: Status code (0: Success, 1: Old file not found, 2: New file already exists, 3: Rename failed).
         """
         old_path = os.path.join(self.path, old_name)
         new_path = os.path.join(self.path, new_name)
@@ -109,6 +145,12 @@ class IscFileSearch:
     def get_file_properties(self, file_path):
         """
         Returns a dictionary of properties for the file at the specified path.
+
+        Args:
+            file_path (str): The path of the file.
+
+        Returns:
+            dict: Dictionary of file properties.
         """
         try:
             file_stats = os.stat(file_path)

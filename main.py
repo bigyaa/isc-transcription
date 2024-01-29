@@ -32,7 +32,7 @@ Note the requests for logic changes, including
 #   -.  Support additional input/output formats and sources.
 #   -.  Refactor for improved modularity and testability.
 # ---------------------------------------------------------------------------------------------------------------------
-#   last updated:  November 2023
+#   last updated:  January 2024
 #   authors:       Ruben Maharjan, Bigya Bajarcharya, Mofeoluwa Jide-Jegede, Phil Pfeiffer
 # *************************************************************************************************************************
 
@@ -70,7 +70,7 @@ import threading
 from src.transcribe.models.WhisperxTranscriber import WhisperxTranscriber
 from src.utils.ISCLogWrapper import ISCLogWrapper, logging
 from src.utils.TranscriptionConfig import TranscriptionConfig
-from src.utils.helperFunctions import err_to_str 
+from src.utils.helperFunctions import format_error_message 
 
 
 # ***********************************************
@@ -96,5 +96,5 @@ if __name__ == '__main__':
         model.transcribe() 
         sys.exit(SUCCESS)
     except Exception as e:
-        logger.critical(f"Transcription failed due to error: {err_to_str(e)}")
+        logger.critical(f"Transcription failed due to error: {format_error_message(e)}")
         sys.exit(FAILURE)

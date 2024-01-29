@@ -19,7 +19,7 @@
 #   -.  The module is designed to be used as a utility in a larger audio transcription application.
 #   -.  Logging is configured to provide info and critical feedback for the operations performed.
 # ---------------------------------------------------------------------------------------------------------------------
-#   last updated: November 2023
+#   last updated: January 2024
 #   authors: Ruben Maharjan, Bigya Bajarcharya, Mofeoluwa Jide-Jegede, Phil Pfeiffer
 # *************************************************************************************************************************
 
@@ -41,7 +41,7 @@ import logging
 
 from lxml import etree
 
-from config.DEFAULTS import (DEFAULT_AUDIO, DEFAULT_AUDIO_FILE_EXTENSIONS,
+from config.DEFAULTS import (DEFAULT_AUDIO_FILE_EXTENSIONS,
                              DEFAULT_CONFIG_FILE, DEFAULT_CONFIG_FILE_SCHEMA)
 
 # ***********************************************
@@ -49,23 +49,31 @@ from config.DEFAULTS import (DEFAULT_AUDIO, DEFAULT_AUDIO_FILE_EXTENSIONS,
 # ***********************************************
 
 
-def err_to_str(e): return '' if str(e) is None else str(e)
+def format_error_message(error):
+    """
+    Format an error message as a string.
+
+    Args:
+        error (Exception): The exception object.
+
+    Returns:
+        str: The formatted error message.
+    """
+    return '' if str(error) is None else str(error)
+
 logger = logging.getLogger()
 
 # ***********************************************
 #  helper functions proper
 # ***********************************************
 
-# =========================================================================================
-#    Parse command line arguments and return the parsed arguments.
-#   Returns:
-#    - Parsed command line arguments as attributes named by the add_argument 'dest' parameters
-#
-#   Design notes:
-#   -.  Defaults for parameters with unspecified defaults managed in the modules that use these parameters
-# =========================================================================================
-
 def parse_command_line_args():
+    """
+    Parse command line arguments and return the parsed arguments.
+
+    Returns:
+        dict: Parsed command line arguments as a dictionary.
+    """
     parser = argparse.ArgumentParser(
         description="Process command-line arguments for audio transcription.")
     #
@@ -83,6 +91,18 @@ def parse_command_line_args():
     return vars(parser.parse_args())
 
 def str2bool(v):
+    """
+    Convert a string to a boolean value.
+
+    Args:
+        v (str): The input string.
+
+    Returns:
+        bool: The corresponding boolean value.
+
+    Raises:
+        argparse.ArgumentTypeError: If the input string is not a valid boolean representation.
+    """
     if isinstance(v, bool):
         return v
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -96,29 +116,26 @@ def validate_configxml(logger, xml_file=DEFAULT_CONFIG_FILE, xsd_schema=DEFAULT_
     """
     Validate an XML file against an XSD schema.
 
-    Parameters:
-      logger:  log object for logging routine status
-    - xml_file: Path to the XML file.
-    - xsd_file: Path to the XSD schema file.
+    Args:
+        logger (logging.Logger): The logger object for logging routine status.
+        xml_file (str, optional): Path to the XML file. Defaults to DEFAULT_CONFIG_FILE.
+        xsd_schema (str, optional): Path to the XSD schema file. Defaults to DEFAULT_CONFIG_FILE_SCHEMA.
+
+    Raises:
+        lxml.etree.XMLSchemaParseError: If the XSD schema is not valid.
+        lxml.etree.DocumentInvalid: If the XML document is not valid.
+        Exception: If an error occurs during XML validation.
     """
-    # Load the XML file
-# TODO I think you need to check for a parse error here 
-    xml_doc = etree.parse(xml_file)
-
-    # Load the XML schema
-    schema = etree.XMLSchema(file=xsd_schema)
-
-    logger.info('Validating to check if the xml meets schema requirements')
-
-    # Validate the XML document against the schema
     try:
+        xml_doc = etree.parse(xml_file)
+        schema = etree.XMLSchema(file=xsd_schema)
+        logger.debug('Validating to check if the xml meets schema requirements')
         schema.assertValid(xml_doc)
-        logger.info(
-            f"XML document ({xml_doc}) is valid according to the schema ({xsd_schema}).")
+        logger.info(f"XML document ({xml_file}) is valid according to the schema ({xsd_schema}).")
     except etree.XMLSchemaParseError as xspe:
         logger.critical(f"XML Schema is not valid: {xspe}")
     except etree.DocumentInvalid as di:
         logger.critical(f"XML document is not valid: {di}")
     except Exception as e:
-        logger.critical(
-            f"An error occurred during XML validation: {err_to_str(e)}")
+        logger.critical(f"An error occurred during XML validation: {format_error_message(e)}")
+
