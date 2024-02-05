@@ -1,4 +1,4 @@
-# *************************************************************************************************************************
+ # *************************************************************************************************************************
 #   TranscriptionConfig.py
 #       Manage the configuration for an audio transcription system, including access to XML configuration files.
 # -------------------------------------------------------------------------------------------------------------------
@@ -39,8 +39,9 @@
 #   helperFunctions - module with functions for command-line argument parsing and XML file validation
 
 import os
+import sys
 import xml.etree.ElementTree as ET
-import copy 
+import xmlschema
 
 from config.DEFAULTS import (DEFAULT_CONFIG_FILE, DEFAULT_CONFIG_FILE_SCHEMA,
                              DEFAULT_WHISPER_CONFIG)
@@ -48,6 +49,82 @@ from src.utils.helperFunctions import (format_error_message, logger,
                                        parse_command_line_args,
                                        validate_configxml)
 from src.utils.applicationStatusManagement import ExitStatus, FileFormatError, ConfigurationError
+import applicationStatusManagement as STATUS
+
+# ******************************************************************************************************
+#  auxiliary classes and functions
+# ******************************************************************************************************
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# config file parsing
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# =======================================================================================================
+# helper function for argparse
+# =======================================================================================================
+
+# =====================================================================================================================
+# XMLConfigFile - access a flat (depth 2) XML configuration file's contents
+# ---------------------------------------------------------------------------------------------------------------------
+# XML config file expected format:
+#    logfile - a string naming a file for logging
+#    output_dir - a string naming a directory in which to store output files
+#    manifest_file - a string naming a file for recording the names of files that this application creates
+# all elements are optional
+#  
+# XMLConfigFile has two major methods
+# -.  __init__ - loads specified file, validating it against specified schema
+# -.  contents - returns a quadruple
+#       first value is a dict that presents the file's contents
+#       second value holds a nonempty error message if the config file couldn't be accessed
+#       third value holds a nonempty error message if the schema file couldn't be accessed
+#       fourth value holds a nonempty error message if the config file's contents couldn't be successfully validated
+# =====================================================================================================================
+
+class XMLConfigFile( object ):
+  def __init__( self, config_file=DEFAULT_CONFIG_FILE, config_schema=DEFAULT_CONFIG_FILE_SCHEMA ):
+    #
+    self._contents = {}
+    self.file_missing = []
+    self.file_malformed = []
+    self.schema_missing = []
+    self.schema_malformed = []
+    self.file_invalid = []
+    #
+    # step 1 - retrieve file's contents as a dictionary
+    #
+    if not os.path.isfile(config_file):
+      self.file_missing = [ f"XMLConfigFile: config file {config_file} not found" ]
+    if not os.path.isfile(config_schema):
+      self.schema_missing = [ f"XMLConfigFile: config schema {config_schema} not found" ]
+    #
+    if self.file_missing: return
+    #
+    try:
+      parsed_config_file = ET.parse(config_file)
+    except ET.ParseError as e:
+      self.file_malformed = [ f"XMLConfigFile: cannot parse {config_file} - {STATUS.err_to_str(e)}" ]
+      return
+    #
+    self._contents = dict( [(e.tag, e.text) for e in parsed_config_file.iterfind("./*")] )
+    #
+    # step 2 - validate the file
+    #
+    if self.schema_missing: return
+    #
+    try:
+       parsed_config_file_schema = xmlschema.XMLSchema(config_schema)
+    except Exception as e:
+       self.schema_malformed = [ f"XMLConfigFile: invalid schema {config_schema} - {STATUS.err_to_str(e)}" ]
+       return
+    #
+    try:
+       parsed_config_file_schema.validate(config_file)
+    except Exception as e:
+       self.file_invalid = [ f"XMLConfigFile: schema {config_schema} won't validate {config_file} - {STATUS.err_to_str(e)}" ]  
+  def contents( self ):
+    return (self._contents, self.file_missing, self.file_malformed, self.schema_missing, self.schema_malformed, self.file_invalid)
+
 
 # ***********************************************
 #  main module
@@ -62,34 +139,46 @@ from src.utils.applicationStatusManagement import ExitStatus, FileFormatError, C
 class TranscriptionConfig():
     def __init__(self):
         self.command_line_args = parse_command_line_args()
-        self.config_data = copy.deepcopy(DEFAULT_WHISPER_CONFIG)
 
         self._contents = {}
 
         config_file = getattr(self.command_line_args, 'configxml', DEFAULT_CONFIG_FILE)
+        parsed_config_file = XMLConfigFile(config_file)
 
-        if os.path.isfile(config_file):
-            with open(config_file, 'rb') as file:
-                self.root = ET.parse(file).getroot()
-        else:
-            err_msg = f"Config file not found: {config_file}"
-            logger.error(err_msg)
-            if hasattr(self.command_line_args, 'configxml'):
-                raise ConfigurationError(ExitStatus.missing_file())
+        # if os.path.isfile(config_file):
+        #     with open(config_file, 'rb') as file:
+        #         self.root = ET.parse(file).getroot()
+        # else:
+        #     err_msg = f"Config file not found: {config_file}"
+        #     logger.error(err_msg)
+        #     if hasattr(self.command_line_args, 'configxml'):
+        #         raise ConfigurationError(ExitStatus.missing_file())
 
-        if hasattr(self, 'root'):
-            try:
-                validate_configxml(logger, config_file, DEFAULT_CONFIG_FILE_SCHEMA)
-                self.config_data.update({child.tag: child.text for child in self.root})
-            except Exception as e:
-                logger.error(f"Error loading config file: {config_file} - {format_error_message(e)}")
-                raise ConfigurationError(ExitStatus.file_format_error())
+        # if hasattr(self, 'root'):
+        #     try:
+        #         validate_configxml(logger, config_file, DEFAULT_CONFIG_FILE_SCHEMA)
+        #         self.config_data.update({child.tag: child.text for child in self.root})
+        #     except Exception as e:
+        #         logger.error(f"Error loading config file: {config_file} - {format_error_message(e)}")
+        #         raise ConfigurationError(ExitStatus.file_format_error())
        
-        for key, value in self.command_line_args.items():
-            if value is not None:
-                self.config_data[key] = value
+        # for key, value in self.command_line_args.items():
+        #     if value is not None:
+        #         self.config_data[key] = value
 
-        print(f"Config data: {self.config_data}")
+        # print(f"Config data: {self.config_data}")
+
+        ( config_file_data, file_missing, file_malformed, schema_missing, schema_malformed, file_invalid ) = parsed_config_file.contents()
+    
+        fatal_errors = '\n'.join( (file_missing if config_file else []) + file_malformed + schema_malformed + file_invalid  )
+        if fatal_errors:
+            print( STATUS.app_errmsg( "ConfigManager: " + fatal_errors ), file=sys.stderr )
+            sys.exit(STATUS.ExitStatus.missing_file())
+        
+        warnings = '\n'.join( file_missing + schema_missing )
+        if warnings:  
+            print( STATUS.app_infomsg( warnings ), file=sys.stderr )
+            STATUS.ExitStatus.missing_default_file()
 
     def get(self, key):
         """
@@ -99,7 +188,7 @@ class TranscriptionConfig():
             return self.config_data.get(key)
         except Exception as e:
             logger.error(f'Could not find element in configuration file: {format_error_message(e)}')
-            raise ConfigurationError(ExitStatus.internal_error())
+            STATUS.ExitStatus.internal_error()
 
     def set_param(self, key, value):
         """
@@ -123,7 +212,7 @@ class TranscriptionConfig():
             return True
         except Exception as e:
             logger.error(f'Error while setting element value: {format_error_message(e)}')
-            raise ConfigurationError(ExitStatus.internal_error())
+            STATUS.ExitStatus.internal_error()
 
     def get_all(self):
         """
@@ -133,6 +222,6 @@ class TranscriptionConfig():
             return {child.tag: child.text for child in self.root}
         except Exception as e:
             logger.error(f'Error while getting all key-value pairs in configuration file: {format_error_message(e)}')
-            raise ConfigurationError(ExitStatus.internal_error())
+            STATUS.ExitStatus.internal_error()
         
     

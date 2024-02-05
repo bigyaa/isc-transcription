@@ -195,3 +195,4 @@ wget==3.2
 whisperx @ git+https://github.com/m-bain/whisperx.git@4cdce3b927a4dcf8eea1da2b68e36290095c4812
 widgetsnbextension==4.0.5
 yarl==1.9.2
+xmlschema==3.0.1

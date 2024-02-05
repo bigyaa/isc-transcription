@@ -1,14 +1,3 @@
-'''
-TODO:
-Request – look to factor my changes, Mofe's updated doc, and support for model parameterization into main.py
-Note the requests for logic changes, including 
-•	the inclusion of a device parameter.  We need to support gpu for testing.
-•	the inclusion of a logfile parameter
-•	the need to force all logging through main, post-configuration
-•	the need to report logging failure through a means other than the logger (and to note this program's name)
-•	the use of exit() to exit the program
-'''
-
 # *************************************************************************************************************************
 #   main.py 
 #     Entry point for the WhisperX-based audio transcription application. 
@@ -91,8 +80,8 @@ if __name__ == '__main__':
     try:
         model = WhisperxTranscriber(config, logger)
         model.transcribe() 
-        logger.info(f"Processing of {config['audiodir']} completed. ") 
+        logger.info(f"Processing of {config.get('audiodir')} completed. ") 
         sys.exit(SUCCESS)
     except Exception as e:
-        logger.critical(f"Processing of {config['audiodir']} failed due to error: {format_error_message(e)}")
+        logger.critical(f"Processing of {config.get('audiodir')} failed due to error: {format_error_message(e)}")
         sys.exit(FAILURE)

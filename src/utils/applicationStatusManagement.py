@@ -30,6 +30,16 @@
 import threading
 import time
 
+my_generic_message = lambda message, show=False: f'{threading.current_thread().name}'+' '+time.ctime()+f"{': ' if show else ''}{message}"
+
+def statusmsg( message, show_thread_and_time=False ):
+  return my_generic_message( f'{statusmsg.filename} {message}', show_thread_and_time )
+statusmsg.filename = ''
+
+def errmsg( syndrome, show_thread_and_time=False ):
+  return my_generic_message( f'?? {errmsg.filename} {syndrome}', show_thread_and_time )
+errmsg.filename = ''
+
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # exception generation
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
