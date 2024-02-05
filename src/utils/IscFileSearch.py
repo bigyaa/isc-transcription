@@ -77,7 +77,7 @@ class IscFileSearch:
             return []
 
         audio_file_paths = []
-        for dirpath, dirnames, filenames in os.walk(self.path, onerror=lambda e: logger.error(e)):
+        for dirpath, dirnames, filenames in os.walk(self.path, onerror=lambda e: logger.error(e)): #TODO MErge with WhisperxTranscriber no need for this separate function
             for filename in filenames:
                 if filename.lower().endswith(('.mp3', '.wav')):
                     audio_file_paths.append(os.path.join(dirpath, filename))

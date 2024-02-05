@@ -16,9 +16,9 @@
 #           create or delete configuration keys.
 #
 #   Design Notes:
-#   -.  The module makes use of lxml for XML parsing and validation.
+#   -.  The module uses lxml for XML parsing and validation.
 #   -.  Custom utility functions are used for command-line parsing and XML validation.
-#   -.  The logging module is used to provide feedback and error reporting.
+#   -.  The logging module provides feedback and error reporting.
 # ---------------------------------------------------------------------------------------------------------------------
 #   last updated: January 2024
 #   authors: Ruben Maharjan, Bigya Bajarcharya, Mofeoluwa Jide-Jegede, Phil Pfeiffer
@@ -58,44 +58,33 @@ from src.utils.applicationStatusManagement import ExitStatus, FileFormatError, C
 # read XML configuration files for the transcription system.
 # **************************************************************************
 
-
+# TODO: separate check of config file in a separate class and use a get on config file evaluation to further processing of config file values.
 class TranscriptionConfig():
     def __init__(self):
         self.command_line_args = parse_command_line_args()
         self.config_data = copy.deepcopy(DEFAULT_WHISPER_CONFIG)
 
-        # Initialize error tracking variables
         self._contents = {}
-        self.file_missing = []
-        self.file_malformed = []
-        self.schema_missing = []
-        self.schema_malformed = []
-        self.file_invalid = []
 
-        try:
-            config_file = getattr(self.command_line_args, 'configxml', DEFAULT_CONFIG_FILE)
-            fail_if_missing = True if hasattr(self.command_line_args, 'configxml') else False
+        config_file = getattr(self.command_line_args, 'configxml', DEFAULT_CONFIG_FILE)
 
-            if os.path.isfile(config_file):
-                with open(config_file, 'rb') as file:
-                    self.root = ET.parse(file).getroot()
-            else:
-                err_msg = f"Config file not found: {config_file}"
-                logger.error(err_msg)
-                if fail_if_missing:
-                    raise ConfigurationError(ExitStatus.missing_file())
+        if os.path.isfile(config_file):
+            with open(config_file, 'rb') as file:
+                self.root = ET.parse(file).getroot()
+        else:
+            err_msg = f"Config file not found: {config_file}"
+            logger.error(err_msg)
+            if hasattr(self.command_line_args, 'configxml'):
+                raise ConfigurationError(ExitStatus.missing_file())
 
-            if hasattr(self, 'root'):
-                try:
-                    validate_configxml(logger, config_file, DEFAULT_CONFIG_FILE_SCHEMA)
-                    self.config_data.update({child.tag: child.text for child in self.root})
-                except Exception as e:
-                    logger.error(f"Error loading config file: {config_file} - {format_error_message(e)}")
-                    raise ConfigurationError(ExitStatus.file_format_error())
-        except ConfigurationError as e:
-            logger.error(str(e))
-            raise ConfigurationError(ExitStatus.internal_error())
-
+        if hasattr(self, 'root'):
+            try:
+                validate_configxml(logger, config_file, DEFAULT_CONFIG_FILE_SCHEMA)
+                self.config_data.update({child.tag: child.text for child in self.root})
+            except Exception as e:
+                logger.error(f"Error loading config file: {config_file} - {format_error_message(e)}")
+                raise ConfigurationError(ExitStatus.file_format_error())
+       
         for key, value in self.command_line_args.items():
             if value is not None:
                 self.config_data[key] = value
@@ -145,3 +134,5 @@ class TranscriptionConfig():
         except Exception as e:
             logger.error(f'Error while getting all key-value pairs in configuration file: {format_error_message(e)}')
             raise ConfigurationError(ExitStatus.internal_error())
+        
+    

@@ -11,7 +11,8 @@ Note the requests for logic changes, including
 
 # *************************************************************************************************************************
 #   main.py 
-#     Entry point for the WhisperX-based audio transcription application. # -------------------------------------------------------------------------------------------------------------------
+#     Entry point for the WhisperX-based audio transcription application. 
+# -------------------------------------------------------------------------------------------------------------------
 #   Usage:
 #      python main.py --audio [path_to_audio_file] --configxml [path_to_config_file] [Other_Arguments]
 #      Arguments and defaults:
@@ -27,11 +28,6 @@ Note the requests for logic changes, including
 #         Processes and transcribes audio files, outputting transcription files in the specified directory.
 #         Application activity and errors are logged.
 # ---------------------------------------------------------------------------------------------------------------------
-#   TODO:
-#   -.  Enhance error handling for argument parsing and configuration validation.
-#   -.  Support additional input/output formats and sources.
-#   -.  Refactor for improved modularity and testability.
-# ---------------------------------------------------------------------------------------------------------------------
 #   last updated:  January 2024
 #   authors:       Ruben Maharjan, Bigya Bajarcharya, Mofeoluwa Jide-Jegede, Phil Pfeiffer
 # *************************************************************************************************************************
@@ -39,6 +35,7 @@ Note the requests for logic changes, including
 # ***********************************************
 # program constants
 # ***********************************************
+#  PROGRAM EXIT CODES
 
 SUCCESS = 0
 FAILURE = 1
@@ -94,7 +91,8 @@ if __name__ == '__main__':
     try:
         model = WhisperxTranscriber(config, logger)
         model.transcribe() 
+        logger.info(f"Processing of {config['audiodir']} completed. ") 
         sys.exit(SUCCESS)
     except Exception as e:
-        logger.critical(f"Transcription failed due to error: {format_error_message(e)}")
+        logger.critical(f"Processing of {config['audiodir']} failed due to error: {format_error_message(e)}")
         sys.exit(FAILURE)
