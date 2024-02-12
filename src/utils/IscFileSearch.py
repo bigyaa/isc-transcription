@@ -38,7 +38,6 @@
 # logging - module to provide logging functionalities
 #    getLogger - function to return a logger instance
 
-
 import logging
 import os
 
@@ -77,11 +76,19 @@ class IscFileSearch:
             return []
 
         audio_file_paths = []
-        for dirpath, dirnames, filenames in os.walk(self.path, onerror=lambda e: logger.error(e)): #TODO MErge with WhisperxTranscriber no need for this separate function
-            for filename in filenames:
-                if filename.lower().endswith(('.mp3', '.wav')):
-                    audio_file_paths.append(os.path.join(dirpath, filename))
+        self._traverse_directory_recursively(self.path, audio_file_paths)
         return audio_file_paths
+
+    def _traverse_directory_recursively(self, directory, audio_file_paths):
+        """
+        Recursively traverses a directory and adds audio file paths to the provided list.
+        """
+        for filename in os.listdir(directory):
+            filepath = os.path.join(directory, filename)
+            if os.path.isdir(filepath):
+                self._traverse_directory_recursively(filepath, audio_file_paths)
+            elif filename.lower().endswith(('.mp3', '.wav')):
+                audio_file_paths.append(filepath)
 
     def get_files(self, file_exts=None):
         """
@@ -95,7 +102,7 @@ class IscFileSearch:
         """
         if file_exts is None:
             file_exts = ['mp3', 'wav']
-        return self.traverse_directory()
+        return [file_path for file_path in self.traverse_directory() if file_path.lower().endswith(tuple(file_exts))]
 
     def delete_file(self, file_path):
         """

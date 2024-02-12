@@ -1,3 +1,0 @@
-Time taken to transcribe/diarize: 0.17774731715520223 minutes 
-
-[0.009 - 6.067]   This is the default recording for transcription.
