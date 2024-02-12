@@ -129,11 +129,13 @@ class ISCLogWrapper(object):
             default_value = DEFAULT_LOGGING_CONFIG
             for segment in path:
                 default_value = default_value.get(segment, {})
-            setattr(self, key, config.get_all().get(key, default_value))
+            setattr(self, key, config.get(key, default_value))
 
         # Log record formatting parameters
-        self.line_format = config.get_all().get('line_format', LogRecordFormatter.line_format())
-        self.date_format = config.get_all().get('date_format', LogRecordFormatter.date_format())
+        self.line_format = config.get(
+            'line_format', LogRecordFormatter.line_format())
+        self.date_format = config.get(
+            'date_format', LogRecordFormatter.date_format())
 
     # Set up logging using the configuration values passed to the constructor
     def set_up_logging(self):

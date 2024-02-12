@@ -142,14 +142,14 @@ class WhisperxTranscriber:
             logger (logging.Logger): Logging object for capturing status messages.
         """
         # Set operating parameters
-        self.audio_files = config_dict.get_all().get('audiodir', DEFAULT_WHISPER_CONFIG['audiodir'])
-        self.batch_size = config_dict.get_all().get('batch_size', DEFAULT_WHISPER_CONFIG['batch_size'])
-        self.compute_type = config_dict.get_all().get('compute_type', DEFAULT_WHISPER_CONFIG['compute_type'])
-        self.device = config_dict.get_all().get('device', DEFAULT_WHISPER_CONFIG['device'])
-        self.enable_diarization = config_dict.get_all().get('diarize', DEFAULT_WHISPER_CONFIG['diarize'])
-        self.hf_token = config_dict.get_all().get('hf_token', DEFAULT_WHISPER_CONFIG['hf_token'])
-        self.model_size = config_dict.get_all().get('model_size', DEFAULT_WHISPER_CONFIG['model_size'])
-        self.output_dir = config_dict.get_all().get('output_dir', DEFAULT_WHISPER_CONFIG['output_dir'])
+        self.audio_files = config_dict.get('audiodir', DEFAULT_WHISPER_CONFIG['audiodir'])
+        self.batch_size = config_dict.get('batch_size', DEFAULT_WHISPER_CONFIG['batch_size'])
+        self.compute_type = config_dict.get('compute_type', DEFAULT_WHISPER_CONFIG['compute_type'])
+        self.device = config_dict.get('device', DEFAULT_WHISPER_CONFIG['device'])
+        self.enable_diarization = config_dict.get('diarize', DEFAULT_WHISPER_CONFIG['diarize'])
+        self.hf_token = config_dict.get('hf_token', DEFAULT_WHISPER_CONFIG['hf_token'])
+        self.model_size = config_dict.get('model_size', DEFAULT_WHISPER_CONFIG['model_size'])
+        self.output_dir = config_dict.get('output_dir', DEFAULT_WHISPER_CONFIG['output_dir'])
         self.logger = logger
 
         # Set up operations
